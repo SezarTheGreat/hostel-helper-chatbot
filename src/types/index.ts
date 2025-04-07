@@ -16,6 +16,7 @@ export interface Complaint {
   timestamp: Date;
   status: 'new' | 'in-progress' | 'resolved';
   resolution?: string;
+  studentId?: string;
 }
 
 export interface FAQ {
@@ -23,4 +24,13 @@ export interface FAQ {
   question: string;
   answer: string;
   keywords: string[];
+}
+
+export interface Student {
+  id: string;
+  name: string;
+  email: string;
+  roomNumber?: string;
+  hostelBlock?: string;
+  complaints: string[]; // Array of complaint IDs
 }

@@ -1,12 +1,15 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { ChatMessage as ChatMessageType } from '@/types';
+import { ChatMessage as ChatMessageType, Complaint } from '@/types';
 import ChatMessage from './ChatMessage';
 import ChatInput from './ChatInput';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { generateId, processUserMessage, createComplaintTicket } from '@/utils/chatUtils';
+import { generateId, processUserMessage } from '@/utils/chatUtils';
 import { toast } from '@/components/ui/use-toast';
+import { saveComplaint } from '@/services/storageService';
+import { useStudent } from '@/contexts/StudentContext';
+import { useNavigate } from 'react-router-dom';
 
 const ChatInterface: React.FC = () => {
   const [messages, setMessages] = useState<ChatMessageType[]>([]);
@@ -14,17 +17,21 @@ const ChatInterface: React.FC = () => {
   const [complaintCategory, setComplaintCategory] = useState<'hostel' | 'mess' | 'other' | null>(null);
   const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const { student } = useStudent();
+  const navigate = useNavigate();
 
   // Add welcome message when component mounts
   useEffect(() => {
     const welcomeMessage: ChatMessageType = {
       id: generateId(),
       type: 'bot',
-      text: "Hello! I'm your Hostel & Mess Assistant. How can I help you today?",
+      text: student 
+        ? `Hello ${student.name}! I'm your Hostel & Mess Assistant. How can I help you today?` 
+        : "Hello! I'm your Hostel & Mess Assistant. How can I help you today?",
       timestamp: new Date()
     };
     setMessages([welcomeMessage]);
-  }, []);
+  }, [student]);
 
   // Scroll to bottom whenever messages change
   useEffect(() => {
@@ -35,7 +42,46 @@ const ChatInterface: React.FC = () => {
     setMessages(prev => [...prev, message]);
   };
 
+  const createComplaintTicket = (
+    category: 'hostel' | 'mess' | 'other',
+    description: string
+  ): string => {
+    const ticketId = `TICKET-${generateId().toUpperCase()}`;
+    
+    // Create the complaint object
+    const complaint: Complaint = {
+      id: ticketId,
+      category,
+      description,
+      timestamp: new Date(),
+      status: 'new',
+      studentId: student?.id
+    };
+    
+    // Save to localStorage
+    saveComplaint(complaint);
+    
+    // Update the student's complaints array
+    if (student) {
+      student.complaints.push(ticketId);
+      // This will be updated in the StudentContext
+    }
+    
+    return ticketId;
+  };
+
   const handleSendMessage = async (text: string) => {
+    // If not logged in, redirect to login
+    if (!student) {
+      toast({
+        title: "Login Required",
+        description: "Please login to chat with the assistant",
+        variant: "destructive",
+      });
+      navigate('/login');
+      return;
+    }
+    
     // Add user message
     const userMessage: ChatMessageType = {
       id: generateId(),
@@ -89,7 +135,7 @@ const ChatInterface: React.FC = () => {
         const botResponse: ChatMessageType = {
           id: generateId(),
           type: 'bot',
-          text: `Thank you for submitting your complaint. Your ticket number is ${ticketId}. We'll look into this as soon as possible. You can check the status of your complaint by providing this ticket number.`,
+          text: `Thank you for submitting your complaint. Your ticket number is ${ticketId}. We'll look into this as soon as possible. You can check the status of your complaint in your dashboard.`,
           timestamp: new Date()
         };
         addMessage(botResponse);
@@ -203,10 +249,10 @@ const ChatInterface: React.FC = () => {
         <Button 
           variant="secondary" 
           size="sm"
-          onClick={() => handleQuickQuestion("Check complaint status")}
+          onClick={() => navigate('/dashboard')}
           className="whitespace-nowrap"
         >
-          Status check
+          View my complaints
         </Button>
       </div>
       
