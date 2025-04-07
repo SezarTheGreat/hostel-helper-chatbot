@@ -17,6 +17,9 @@ export interface Complaint {
   status: 'new' | 'in-progress' | 'resolved';
   resolution?: string;
   studentId?: string;
+  isEscalation?: boolean;
+  suggestedSolution?: string;
+  adminNotes?: string;
 }
 
 export interface FAQ {
@@ -33,4 +36,18 @@ export interface Student {
   roomNumber?: string;
   hostelBlock?: string;
   complaints: string[]; // Array of complaint IDs
+  isAdmin?: boolean; // Flag to identify admin users
+}
+
+export type EscalationStatus = 'pending' | 'acknowledged' | 'in-review' | 'resolved';
+
+export interface Escalation {
+  id: string;
+  complaintId: string;
+  studentId: string;
+  timestamp: Date;
+  description: string;
+  status: EscalationStatus;
+  suggestedSolution?: string;
+  adminResponse?: string;
 }

@@ -1,15 +1,16 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { ChatMessage as ChatMessageType, Complaint } from '@/types';
+import { ChatMessage as ChatMessageType, Complaint, Escalation } from '@/types';
 import ChatMessage from './ChatMessage';
 import ChatInput from './ChatInput';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { generateId, processUserMessage } from '@/utils/chatUtils';
+import { generateId } from '@/utils/chatUtils';
 import { toast } from '@/components/ui/use-toast';
-import { saveComplaint } from '@/services/storageService';
+import { saveComplaint, saveEscalation } from '@/services/storageService';
 import { useStudent } from '@/contexts/StudentContext';
 import { useNavigate } from 'react-router-dom';
+import { processWithGemini } from '@/utils/geminiApi';
 
 const ChatInterface: React.FC = () => {
   const [messages, setMessages] = useState<ChatMessageType[]>([]);
@@ -19,6 +20,9 @@ const ChatInterface: React.FC = () => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { student } = useStudent();
   const navigate = useNavigate();
+  
+  // Store chat history for context
+  const [chatHistory, setChatHistory] = useState<Array<{role: string, content: string}>>([]);
 
   // Add welcome message when component mounts
   useEffect(() => {
@@ -44,7 +48,9 @@ const ChatInterface: React.FC = () => {
 
   const createComplaintTicket = (
     category: 'hostel' | 'mess' | 'other',
-    description: string
+    description: string,
+    isEscalation: boolean = false,
+    suggestedSolution?: string
   ): string => {
     const ticketId = `TICKET-${generateId().toUpperCase()}`;
     
@@ -55,11 +61,28 @@ const ChatInterface: React.FC = () => {
       description,
       timestamp: new Date(),
       status: 'new',
-      studentId: student?.id
+      studentId: student?.id,
+      isEscalation,
+      suggestedSolution
     };
     
     // Save to localStorage
     saveComplaint(complaint);
+    
+    // Create escalation if needed
+    if (isEscalation) {
+      const escalation: Escalation = {
+        id: `ESCALATION-${generateId().toUpperCase()}`,
+        complaintId: ticketId,
+        studentId: student?.id || '',
+        timestamp: new Date(),
+        description: `Escalated issue: ${description}`,
+        status: 'pending',
+        suggestedSolution
+      };
+      
+      saveEscalation(escalation);
+    }
     
     // Update the student's complaints array
     if (student) {
@@ -94,48 +117,61 @@ const ChatInterface: React.FC = () => {
     // Show typing indicator
     setIsTyping(true);
     
+    // Update chat history
+    const updatedHistory = [
+      ...chatHistory,
+      { role: 'user', content: text }
+    ];
+    setChatHistory(updatedHistory);
+    
     // Process the complaint flow or normal message flow
     if (isSubmittingComplaint) {
       if (!complaintCategory) {
-        // Determine complaint category from user message
-        let category: 'hostel' | 'mess' | 'other' = 'other';
-        const lowerText = text.toLowerCase();
+        // Attempt to categorize with Gemini
+        const geminiResponse = await processWithGemini(text, updatedHistory);
         
-        if (lowerText.includes('hostel') || lowerText.includes('room') || 
-            lowerText.includes('bathroom') || lowerText.includes('facility')) {
-          category = 'hostel';
-        } else if (lowerText.includes('mess') || lowerText.includes('food') || 
-                  lowerText.includes('meal') || lowerText.includes('canteen')) {
-          category = 'mess';
-        }
-        
+        // Set the category from Gemini response or default to 'other'
+        const category = geminiResponse.category || 'other';
         setComplaintCategory(category);
         
-        // Small delay to simulate thinking
-        await new Promise(resolve => setTimeout(resolve, 1000));
         setIsTyping(false);
         
         // Ask for complaint details
         const botResponse: ChatMessageType = {
           id: generateId(),
           type: 'bot',
-          text: `Got it! I understand this is a ${category} related complaint. Please describe your issue in detail.`,
+          text: geminiResponse.text || `Got it! I understand this is a ${category} related complaint. Please describe your issue in detail.`,
           timestamp: new Date()
         };
         addMessage(botResponse);
-      } else {
-        // User has provided complaint details, process the complaint
-        const ticketId = createComplaintTicket(complaintCategory, text);
         
-        // Small delay to simulate processing
-        await new Promise(resolve => setTimeout(resolve, 1500));
+        // Update history with bot response
+        setChatHistory([
+          ...updatedHistory,
+          { role: 'assistant', content: botResponse.text }
+        ]);
+      } else {
+        // User has provided complaint details, process with Gemini
+        const geminiResponse = await processWithGemini(text, updatedHistory);
+        
+        // Determine if this needs escalation
+        const isEscalation = geminiResponse.isEscalation || false;
+        const suggestedSolution = geminiResponse.suggestedSolution;
+        
+        // Create the ticket with AI-generated info
+        const ticketId = createComplaintTicket(complaintCategory, text, isEscalation, suggestedSolution);
+        
         setIsTyping(false);
         
         // Add confirmation message
+        const escalationText = isEscalation 
+          ? " This issue has been marked for urgent attention by administration." 
+          : "";
+          
         const botResponse: ChatMessageType = {
           id: generateId(),
           type: 'bot',
-          text: `Thank you for submitting your complaint. Your ticket number is ${ticketId}. We'll look into this as soon as possible. You can check the status of your complaint in your dashboard.`,
+          text: `Thank you for submitting your complaint. Your ticket number is ${ticketId}.${escalationText} We'll look into this as soon as possible. You can check the status of your complaint in your dashboard.`,
           timestamp: new Date()
         };
         addMessage(botResponse);
@@ -144,18 +180,22 @@ const ChatInterface: React.FC = () => {
         setIsSubmittingComplaint(false);
         setComplaintCategory(null);
         
+        // Update history with bot response
+        setChatHistory([
+          ...updatedHistory,
+          { role: 'assistant', content: botResponse.text }
+        ]);
+        
         // Show toast notification
         toast({
-          title: "Complaint Submitted",
+          title: isEscalation ? "Urgent Complaint Submitted" : "Complaint Submitted",
           description: `Ticket ${ticketId} has been created successfully.`,
+          variant: isEscalation ? "destructive" : "default",
         });
       }
     } else {
-      // Process regular message
-      // Small delay to simulate thinking
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      const response = processUserMessage(text);
+      // Process regular message with Gemini API
+      const geminiResponse = await processWithGemini(text, updatedHistory);
       
       setIsTyping(false);
       
@@ -163,14 +203,23 @@ const ChatInterface: React.FC = () => {
       const botResponse: ChatMessageType = {
         id: generateId(),
         type: 'bot',
-        text: response.text,
+        text: geminiResponse.text,
         timestamp: new Date()
       };
       addMessage(botResponse);
       
+      // Update history with bot response
+      setChatHistory([
+        ...updatedHistory,
+        { role: 'assistant', content: botResponse.text }
+      ]);
+      
       // If the response identified a complaint intent, start complaint flow
-      if (response.isComplaint) {
+      if (geminiResponse.isComplaint) {
         setIsSubmittingComplaint(true);
+        if (geminiResponse.category) {
+          setComplaintCategory(geminiResponse.category);
+        }
       }
     }
   };
@@ -193,7 +242,7 @@ const ChatInterface: React.FC = () => {
           <div>
             <CardTitle>Hostel Helper</CardTitle>
             <CardDescription className="text-white/80">
-              Your assistant for hostel and mess related queries
+              Your AI-powered assistant for hostel and mess related queries
             </CardDescription>
           </div>
         </div>

@@ -1,10 +1,11 @@
 
-import { Complaint, Student } from "@/types";
+import { Complaint, Student, Escalation } from "@/types";
 
 // Keys for localStorage
 const STUDENTS_KEY = 'hostel_helper_students';
 const COMPLAINTS_KEY = 'hostel_helper_complaints';
 const CURRENT_STUDENT_KEY = 'hostel_helper_current_student';
+const ESCALATIONS_KEY = 'hostel_helper_escalations';
 
 // Student methods
 export const getStudents = (): Student[] => {
@@ -104,4 +105,89 @@ export const updateComplaintStatus = (
   }
   
   return false;
+};
+
+// New Escalation methods
+export const getEscalations = (): Escalation[] => {
+  const escalationsJson = localStorage.getItem(ESCALATIONS_KEY);
+  const escalations = escalationsJson ? JSON.parse(escalationsJson) : [];
+  
+  // Convert string timestamps back to Date objects
+  return escalations.map((escalation: any) => ({
+    ...escalation,
+    timestamp: new Date(escalation.timestamp)
+  }));
+};
+
+export const saveEscalations = (escalations: Escalation[]): void => {
+  localStorage.setItem(ESCALATIONS_KEY, JSON.stringify(escalations));
+};
+
+export const saveEscalation = (escalation: Escalation): void => {
+  const escalations = getEscalations();
+  const existingIndex = escalations.findIndex(e => e.id === escalation.id);
+  
+  if (existingIndex !== -1) {
+    escalations[existingIndex] = escalation;
+  } else {
+    escalations.push(escalation);
+  }
+  
+  saveEscalations(escalations);
+};
+
+export const getEscalationsByComplaintId = (complaintId: string): Escalation[] => {
+  const escalations = getEscalations();
+  return escalations.filter(escalation => escalation.complaintId === complaintId);
+};
+
+export const updateEscalationStatus = (
+  escalationId: string,
+  status: 'pending' | 'acknowledged' | 'in-review' | 'resolved',
+  adminResponse?: string
+): boolean => {
+  const escalations = getEscalations();
+  const escalationIndex = escalations.findIndex(e => e.id === escalationId);
+  
+  if (escalationIndex !== -1) {
+    escalations[escalationIndex].status = status;
+    if (adminResponse) {
+      escalations[escalationIndex].adminResponse = adminResponse;
+    }
+    saveEscalations(escalations);
+    return true;
+  }
+  
+  return false;
+};
+
+// Admin methods
+export const createAdminUser = (): Student => {
+  const students = getStudents();
+  
+  // Check if admin already exists
+  const existingAdmin = students.find(s => s.isAdmin);
+  
+  if (existingAdmin) {
+    return existingAdmin;
+  }
+  
+  // Create a new admin user
+  const adminUser: Student = {
+    id: 'admin-' + Date.now().toString(),
+    name: 'Admin User',
+    email: 'admin@hostelhelper.com',
+    complaints: [],
+    isAdmin: true
+  };
+  
+  students.push(adminUser);
+  saveStudents(students);
+  
+  return adminUser;
+};
+
+// Initialize an admin user if none exists
+export const initializeAdmin = (): void => {
+  createAdminUser();
 };
