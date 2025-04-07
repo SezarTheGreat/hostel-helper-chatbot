@@ -1,3 +1,4 @@
+
 import type { Config } from "tailwindcss";
 
 export default {
@@ -61,6 +62,13 @@ export default {
 					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
+				},
+				chatbot: {
+					DEFAULT: '#6366f1', // indigo-500
+					light: '#818cf8', // indigo-400
+					dark: '#4338ca', // indigo-700
+					user: '#8b5cf6', // violet-500
+					bot: '#6366f1', // indigo-500
 				}
 			},
 			borderRadius: {
@@ -84,11 +92,27 @@ export default {
 					to: {
 						height: '0'
 					}
+				},
+				'typing': {
+					'0%': { width: '0' },
+					'100%': { width: '100%' }
+				},
+				'blink': {
+					'0%, 100%': { opacity: '1' },
+					'50%': { opacity: '0' }
+				},
+				'pulse-dot': {
+					'0%': { transform: 'scale(0.95)', opacity: '1' },
+					'50%': { transform: 'scale(1)', opacity: '0.8' },
+					'100%': { transform: 'scale(0.95)', opacity: '1' }
 				}
 			},
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
-				'accordion-up': 'accordion-up 0.2s ease-out'
+				'accordion-up': 'accordion-up 0.2s ease-out',
+				'typing': 'typing 2s steps(40, end)',
+				'blink': 'blink 0.75s infinite',
+				'pulse-dot': 'pulse-dot 1.5s ease-in-out infinite'
 			}
 		}
 	},
