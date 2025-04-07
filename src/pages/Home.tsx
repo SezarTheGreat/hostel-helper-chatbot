@@ -2,31 +2,63 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useStudent } from "@/contexts/StudentContext";
+import { Loader } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
+import { useState } from "react";
 
 const Home = () => {
   const { student, isLoading } = useStudent();
   const navigate = useNavigate();
+  const [progress, setProgress] = useState(0);
+
+  // Handle progress animation
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setProgress(100);
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, []);
 
   useEffect(() => {
-    // If loading is done, redirect based on login status
-    if (!isLoading) {
-      if (student) {
-        navigate('/dashboard');
-      } else {
-        navigate('/chat');
-      }
-    }
-  }, [student, isLoading, navigate]);
+    // After loading animation completes, redirect based on login status
+    if (progress === 100) {
+      const redirectTimer = setTimeout(() => {
+        if (!isLoading) {
+          if (student) {
+            navigate('/dashboard');
+          } else {
+            navigate('/login');
+          }
+        }
+      }, 1000);
 
-  // Show a loading state while checking
+      return () => clearTimeout(redirectTimer);
+    }
+  }, [student, isLoading, navigate, progress]);
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <div className="text-center">
-        <div className="w-16 h-16 rounded-full bg-gradient-to-r from-chatbot to-accent mx-auto flex items-center justify-center text-white text-3xl font-bold mb-4">
-          H
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-gray-50 to-gray-100">
+      <div className="w-full max-w-md mx-auto p-6 animate-fade-in">
+        <div className="text-center">
+          <div className="w-24 h-24 rounded-full bg-gradient-to-r from-chatbot to-accent mx-auto flex items-center justify-center text-white text-4xl font-bold mb-6 shadow-lg">
+            H
+          </div>
+          <h1 className="text-3xl font-bold text-gray-800 mb-2">Hostel Helper</h1>
+          <p className="text-gray-600 mb-8">Your hostel assistance companion</p>
+          
+          <div className="relative mb-8">
+            <Progress value={progress} className="h-2 w-full bg-gray-200" />
+            <div className="mt-4 flex items-center justify-center text-gray-500">
+              <Loader className="animate-spin mr-2" size={18} />
+              <span>Loading your experience...</span>
+            </div>
+          </div>
+          
+          <p className="text-sm text-gray-500">
+            Helping students resolve hostel and mess issues since 2025
+          </p>
         </div>
-        <h1 className="text-2xl font-bold text-gray-800 mb-2">Hostel Helper</h1>
-        <p className="text-gray-600">Loading...</p>
       </div>
     </div>
   );
