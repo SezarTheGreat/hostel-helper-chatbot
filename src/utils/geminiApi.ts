@@ -6,7 +6,7 @@
 // Note: In a production app, this key should not be exposed in frontend code
 // For a hackathon, we'll use it directly for demo purposes
 const GEMINI_API_KEY = "AIzaSyDE9QXM1Ppi-bEdkdxqHi89lPzc5adZ4wg";
-const API_URL = "https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent";
+const API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent";
 
 export interface GeminiResponse {
   text: string;
@@ -51,17 +51,29 @@ export const processWithGemini = async (
       { role: "user", content: message }
     ];
     
-    // Prepare request to Gemini API
+    // Prepare request to Gemini API with updated endpoint (v1beta instead of v1)
     const response = await fetch(`${API_URL}?key=${GEMINI_API_KEY}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        contents: fullPrompt.map(item => ({
-          role: item.role === 'system' ? 'user' : item.role,
-          parts: [{ text: item.content }]
-        })),
+        contents: [
+          {
+            parts: [
+              { text: systemPrompt }
+            ],
+            role: "system"
+          },
+          ...history.map(item => ({
+            parts: [{ text: item.content }],
+            role: item.role
+          })),
+          {
+            parts: [{ text: message }],
+            role: "user"
+          }
+        ],
         generationConfig: {
           temperature: 0.7,
           maxOutputTokens: 800,

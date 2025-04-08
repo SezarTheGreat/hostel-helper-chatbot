@@ -20,12 +20,20 @@ const Index = () => {
       <main className="flex-1 flex flex-col items-center p-4 md:p-8">
         <div className="w-full max-w-4xl mx-auto space-y-8">
           <div className="text-center mb-8">
+            <div className="w-32 h-32 mx-auto mb-4">
+              <img 
+                src="/lovable-uploads/5fd48585-5a80-44a2-a7c5-c353d4a9878d.png" 
+                alt="Cxeasrs Logo" 
+                className="w-full h-full object-contain"
+              />
+            </div>
             <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-chatbot to-accent bg-clip-text text-transparent my-2">
               Hostel & Mess Complaint System
             </h1>
             <p className="text-gray-600 max-w-2xl mx-auto">
               Get instant answers to your questions or submit complaints about hostel facilities and mess services.
             </p>
+            <p className="text-blue-800 font-semibold mt-2">by Team Cxeasrs</p>
             
             {isAdmin && (
               <div className="mt-4">
@@ -54,7 +62,7 @@ const Index = () => {
           <ChatInterface />
           
           <div className="text-sm text-center text-gray-500 mt-8">
-            <p>© 2025 Hostel Helper. All rights reserved.</p>
+            <p>© 2025 Hostel Helper by Team Cxeasrs. All rights reserved.</p>
             <p>A project created for improved hostel management and student welfare.</p>
           </div>
         </div>

@@ -41,11 +41,16 @@ const Home = () => {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-gray-50 to-gray-100">
       <div className="w-full max-w-md mx-auto p-6 animate-fade-in">
         <div className="text-center">
-          <div className="w-24 h-24 rounded-full bg-gradient-to-r from-chatbot to-accent mx-auto flex items-center justify-center text-white text-4xl font-bold mb-6 shadow-lg">
-            H
+          <div className="w-32 h-32 mx-auto mb-6">
+            <img 
+              src="/lovable-uploads/5fd48585-5a80-44a2-a7c5-c353d4a9878d.png" 
+              alt="Cxeasrs Logo" 
+              className="w-full h-full object-contain"
+            />
           </div>
           <h1 className="text-3xl font-bold text-gray-800 mb-2">Hostel Helper</h1>
-          <p className="text-gray-600 mb-8">Your hostel assistance companion</p>
+          <p className="text-gray-600 mb-2">Your hostel assistance companion</p>
+          <p className="text-blue-800 font-semibold mb-8">by Team Cxeasrs</p>
           
           <div className="relative mb-8">
             <Progress value={progress} className="h-2 w-full bg-gray-200" />

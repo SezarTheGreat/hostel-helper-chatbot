@@ -17,13 +17,14 @@ const Chat = () => {
             <p className="text-gray-600 max-w-2xl mx-auto">
               Get instant answers to your questions or submit complaints about hostel facilities and mess services.
             </p>
+            <p className="text-blue-800 font-semibold mt-2">by Team Cxeasrs</p>
           </div>
           
           <ChatInterface />
           
           <div className="text-sm text-center text-gray-500 mt-8">
             <p>© 2025 Hostel Helper. All rights reserved.</p>
-            <p>A project created for improved hostel management and student welfare.</p>
+            <p>A project created by Team Cxeasrs for improved hostel management and student welfare.</p>
           </div>
         </div>
       </main>

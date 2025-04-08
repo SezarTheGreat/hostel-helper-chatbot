@@ -37,7 +37,10 @@ const Navbar = () => {
             <div className="w-8 h-8 rounded-full bg-gradient-to-r from-chatbot to-accent flex items-center justify-center text-white font-bold">
               H
             </div>
-            <h1 className="font-semibold text-lg">Hostel Helper</h1>
+            <div>
+              <h1 className="font-semibold text-lg">Hostel Helper</h1>
+              <p className="text-xs text-blue-800">by Team Cxeasrs</p>
+            </div>
           </Link>
         </div>
         
