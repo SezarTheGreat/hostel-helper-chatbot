@@ -14,6 +14,8 @@ export interface GeminiResponse {
   isEscalation: boolean;
   suggestedSolution?: string;
   category?: 'hostel' | 'mess' | 'other';
+  sentiment?: 'very-negative' | 'negative' | 'neutral' | 'positive' | 'very-positive';
+  priority?: 'high' | 'medium' | 'low';
 }
 
 /**
@@ -34,6 +36,8 @@ export const processWithGemini = async (
     1. Identify if it's related to hostel facilities, mess food, or something else
     2. Determine if it needs escalation (serious issues like safety concerns, major facility breakdowns, health hazards)
     3. Suggest a possible solution
+    4. Analyze the sentiment of the complaint on a scale: very-negative, negative, neutral, positive, or very-positive
+    5. Assign a priority level: high, medium, or low
     
     Respond in JSON format with these fields:
     - text: Your helpful response to the student
@@ -41,6 +45,8 @@ export const processWithGemini = async (
     - isEscalation: true if this requires escalation to administration
     - category: "hostel", "mess", or "other"
     - suggestedSolution: your recommendation to solve the issue (only if isComplaint is true)
+    - sentiment: "very-negative", "negative", "neutral", "positive", or "very-positive"
+    - priority: "high", "medium", or "low" (based on urgency and severity)
     
     Keep your responses helpful, empathetic, and concise.`;
     
@@ -104,7 +110,9 @@ export const processWithGemini = async (
         isComplaint: Boolean(parsedResponse.isComplaint),
         isEscalation: Boolean(parsedResponse.isEscalation), 
         suggestedSolution: parsedResponse.suggestedSolution,
-        category: parsedResponse.category as 'hostel' | 'mess' | 'other'
+        category: parsedResponse.category as 'hostel' | 'mess' | 'other',
+        sentiment: parsedResponse.sentiment as 'very-negative' | 'negative' | 'neutral' | 'positive' | 'very-positive',
+        priority: parsedResponse.priority as 'high' | 'medium' | 'low'
       };
     } catch (e) {
       console.error('Error parsing Gemini response as JSON:', e);
@@ -112,7 +120,9 @@ export const processWithGemini = async (
       return {
         text: generatedText || 'I encountered an error processing your request. Please try again.',
         isComplaint: /complaint|issue|problem|broken|not working/i.test(message),
-        isEscalation: false
+        isEscalation: false,
+        sentiment: 'neutral',
+        priority: 'medium'
       };
     }
   } catch (error) {
@@ -121,7 +131,9 @@ export const processWithGemini = async (
     return {
       text: "I'm having trouble connecting to my intelligence service. Let me help you with basic assistance instead.",
       isComplaint: /complaint|issue|problem|broken|not working/i.test(message),
-      isEscalation: false
+      isEscalation: false,
+      sentiment: 'neutral',
+      priority: 'medium'
     };
   }
 };

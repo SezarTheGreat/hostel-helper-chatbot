@@ -14,7 +14,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { getComplaints, getEscalations } from "@/services/storageService";
-import { Complaint, Escalation } from "@/types";
+import { Complaint, Escalation, SentimentType } from "@/types";
+import { BarChart3, AlertTriangle, ClipboardList, PieChart } from "lucide-react";
+import DashboardAnalytics from "@/components/DashboardAnalytics";
 
 const Admin = () => {
   const { student } = useStudent();
@@ -64,6 +66,23 @@ const Admin = () => {
         return "bg-gray-500";
     }
   };
+  
+  const getSentimentColor = (sentiment?: SentimentType): string => {
+    switch (sentiment) {
+      case 'very-negative':
+        return "bg-red-500";
+      case 'negative':
+        return "bg-orange-500";
+      case 'neutral':
+        return "bg-yellow-500";
+      case 'positive':
+        return "bg-lime-500";
+      case 'very-positive':
+        return "bg-green-500";
+      default:
+        return "bg-gray-500";
+    }
+  };
 
   const formatDate = (date: Date): string => {
     return new Date(date).toLocaleString();
@@ -86,12 +105,18 @@ const Admin = () => {
           onValueChange={setActiveTab}
           className="w-full"
         >
-          <TabsList className="grid w-full max-w-md grid-cols-2">
-            <TabsTrigger value="escalations">
+          <TabsList className="grid w-full max-w-md grid-cols-3">
+            <TabsTrigger value="escalations" className="flex items-center">
+              <AlertTriangle className="mr-2 h-4 w-4" />
               Escalations <Badge className="ml-2 bg-red-500">{escalations.length}</Badge>
             </TabsTrigger>
-            <TabsTrigger value="all-complaints">
-              All Complaints <Badge className="ml-2">{complaints.length}</Badge>
+            <TabsTrigger value="all-complaints" className="flex items-center">
+              <ClipboardList className="mr-2 h-4 w-4" />
+              Complaints <Badge className="ml-2">{complaints.length}</Badge>
+            </TabsTrigger>
+            <TabsTrigger value="analytics" className="flex items-center">
+              <BarChart3 className="mr-2 h-4 w-4" />
+              Analytics
             </TabsTrigger>
           </TabsList>
           
@@ -116,6 +141,11 @@ const Admin = () => {
                             <div className="flex flex-col md:flex-row justify-between mb-2">
                               <div>
                                 <Badge className="mb-2">{complaint?.category || "Unknown"}</Badge>
+                                {complaint?.sentiment && (
+                                  <Badge className={`ml-2 ${getSentimentColor(complaint.sentiment)}`}>
+                                    {complaint.sentiment}
+                                  </Badge>
+                                )}
                                 <h3 className="font-semibold text-lg">
                                   Escalation {escalation.id}
                                 </h3>
@@ -177,6 +207,8 @@ const Admin = () => {
                           <th className="text-left p-2">ID</th>
                           <th className="text-left p-2">Category</th>
                           <th className="text-left p-2">Status</th>
+                          <th className="text-left p-2">Sentiment</th>
+                          <th className="text-left p-2">Priority</th>
                           <th className="text-left p-2">Date</th>
                           <th className="text-left p-2">Escalated</th>
                           <th className="text-center p-2">Actions</th>
@@ -192,6 +224,16 @@ const Admin = () => {
                             <td className="p-2">
                               <Badge className={getStatusColor(complaint.status)}>
                                 {complaint.status}
+                              </Badge>
+                            </td>
+                            <td className="p-2">
+                              <Badge className={getSentimentColor(complaint.sentiment)}>
+                                {complaint.sentiment || 'neutral'}
+                              </Badge>
+                            </td>
+                            <td className="p-2">
+                              <Badge variant={complaint.priority === 'high' ? 'destructive' : 'outline'}>
+                                {complaint.priority || 'medium'}
                               </Badge>
                             </td>
                             <td className="p-2">{formatDate(complaint.timestamp)}</td>
@@ -221,6 +263,10 @@ const Admin = () => {
                 )}
               </CardContent>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="analytics" className="mt-4">
+            <DashboardAnalytics complaints={complaints} />
           </TabsContent>
         </Tabs>
       </div>

@@ -9,6 +9,8 @@ export interface ChatMessage {
   isTyping?: boolean;
 }
 
+export type SentimentType = 'very-negative' | 'negative' | 'neutral' | 'positive' | 'very-positive';
+
 export interface Complaint {
   id: string;
   category: 'hostel' | 'mess' | 'other';
@@ -20,6 +22,8 @@ export interface Complaint {
   isEscalation?: boolean;
   suggestedSolution?: string;
   adminNotes?: string;
+  sentiment?: SentimentType;
+  priority?: 'high' | 'medium' | 'low';
 }
 
 export interface FAQ {
@@ -50,4 +54,12 @@ export interface Escalation {
   status: EscalationStatus;
   suggestedSolution?: string;
   adminResponse?: string;
+}
+
+export interface SentimentAnalysisResult {
+  category: string;
+  sentiments: {
+    name: SentimentType;
+    value: number;
+  }[];
 }
